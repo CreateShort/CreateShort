@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="fr">
+<head>
+   <meta name="google-site-verification" content="TA_CLE_ICI" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- 🔧 Titre du site : modifie ici -->
+  <title>CreateShorts — Générateur de Shorts YouTube</title>
+
+  <!-- 🔗 Lien vers ton fichier CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- ========================== -->
+  <!-- ======== HEADER ========= -->
+  <!-- ========================== -->
+  <header>
+    <div class="container">
+      <h1>CreateShorts</h1>
+      <p class="tagline">
+        Découpe rapidement un segment d'une longue vidéo YouTube → crée un short.
+        <strong>Essai gratuit : 3 créations</strong>.
+      </p>
+    </div>
+  </header>
+
+  <!-- ========================== -->
+  <!-- ======== MAIN ============ -->
+  <!-- ========================== -->
+  <main class="container">
+    <!-- SECTION 1 : Charger la vidéo -->
+    <section class="panel">
+      <h2>1. Charger une vidéo YouTube</h2>
+
+      <label for="youtubeUrl">URL YouTube :</label>
+      <input id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX" />
+
+      <div class="row">
+        <button id="loadBtn" class="btn">Charger la vidéo</button>
+        <div id="trialInfo" class="small muted">
+          Essai gratuit : <span id="trialCount">3</span> restants
+        </div>
+      </div>
+
+      <!-- Zone du lecteur vidéo -->
+      <div id="playerWrap" class="player-wrap hidden" aria-hidden="true">
+        <div id="player"></div>
+
+        <div class="player-controls">
+          <label>Début (en secondes ou mm:ss)</label>
+          <input id="startInput" placeholder="0" />
+
+          <label>Fin (en secondes ou mm:ss)</label>
+          <input id="endInput" placeholder="15" />
+
+          <div class="row">
+            <button id="previewBtn" class="btn">Prévisualiser</button>
+            <button id="stopPreviewBtn" class="btn secondary">Stop</button>
+          </div>
+
+          <p class="small muted">
+            🔹 Astuce : choisis un extrait de 10 à 60 secondes maximum.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 : Export / Paiement -->
+    <section class="panel">
+      <h2>2. Créer ton short</h2>
+      <p class="small">
+        Clique sur <strong>Créer / Exporter</strong> pour générer ton short.
+        Tu as droit à 3 créations gratuites, puis abonnement à <strong>2 € / mois</strong>.
+      </p>
+
+      <div class="row">
+        <button id="exportBtn" class="btn primary">Créer / Exporter</button>
+        <div id="statusMsg" class="small muted"></div>
+      </div>
+
+      <!-- Paywall (s'affiche après 3 essais) -->
+      <div id="paywall" class="paywall hidden">
+        <p class="muted">
+          Ton essai gratuit est terminé 😢<br>
+          Pour continuer à utiliser CreateShorts, abonne-toi :
+        </p>
+
+       <a id="paypalBtn"
+   class="btn paypal"
+   href="https://www.paypal.com/paypalme/AvaGrassia/2EUR"
+   target="_blank"
+   rel="noopener noreferrer">
+   💸 S’abonner — 2 € / mois
+</a>
+
+
+        <p class="small muted">
+          (Ce lien ouvre ton PayPal. L’abonnement doit être géré manuellement ou via webhook sur ton backend.)
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3 : Historique -->
+    <section class="panel">
+      <h2>3. Historique local</h2>
+      <ul id="jobsList" class="jobs-list small muted">
+        <li>Aucun short créé pour le moment.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 4 : Mentions -->
+    <section class="panel footer-note">
+      <h3>Remarques importantes</h3>
+      <ul class="small muted">
+        <li>Ce site ne télécharge pas directement les vidéos YouTube — il faut un serveur pour générer le short.</li>
+        <li>Le traitement réel (découpe/encodage) doit respecter les conditions d'utilisation de YouTube.</li>
+        <li>Ce code gère seulement l’interface (front-end) et le paiement.</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- ========================== -->
+  <!-- ========= FOOTER ========= -->
+  <!-- ========================== -->
+  <footer>
+    <div class="container small muted">
+      © <span id="year"></span> CreateShorts — Tous droits réservés.
+    </div>
+  </footer>
+
+  <!-- ========================== -->
+  <!-- === SCRIPTS JAVASCRIPT === -->
+  <!-- ========================== -->
+
+  <!-- API YouTube pour intégrer le lecteur -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    // === Initialisation ===
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // === Variables ===
+    const qs = (sel) => document.querySelector(sel);
+    const TRIAL_KEY = 'shorts_trial_v1';
+    const MAX_TRIAL = 3;
+
+    // === Fonctions ===
+    function getTrial() {
+      const value = localStorage.getItem(TRIAL_KEY);
+      return value === null ? MAX_TRIAL : Number(value);
+    }
+
+    function setTrial(n) {
+      localStorage.setItem(TRIAL_KEY, n);
+      qs('#trialCount').textContent = n;
+    }
+
+    function extractId(url) {
+      const reg = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/;
+      const m = url.match(reg);
+      return m ? m[1] : null;
+    }
+
+    let ytPlayer, videoId;
+
+    // === Charger la vidéo ===
+    qs('#loadBtn').addEventListener('click', () => {
+      const url = qs('#youtubeUrl').value.trim();
+      const id = extractId(url);
+      if (!id) {
+        alert('❌ URL YouTube invalide');
+        return;
+      }
+      videoId = id;
+
+      qs('#playerWrap').classList.remove('hidden');
+
+      if (ytPlayer) ytPlayer.destroy();
+
+      ytPlayer = new YT.Player('player', {
+        height: '360',
+        width: '640',
+        videoId: id,
+        playerVars: { controls: 1, rel: 0 }
+      });
+    });
+
+    // === Prévisualisation ===
+    function parseTime(t) {
+      if (!t) return 0;
+      if (t.includes(':')) {
+        const [m, s] = t.split(':').map(Number);
+        return m * 60 + s;
+      }
+      return Number(t);
+    }
+
+    let loopInterval;
+
+    qs('#previewBtn').addEventListener('click', () => {
+      if (!ytPlayer) return alert('Charge une vidéo avant.');
+      const start = parseTime(qs('#startInput').value);
+      const end = parseTime(qs('#endInput').value);
+      if (end <= start) return alert('La fin doit être > au début.');
+
+      ytPlayer.seekTo(start);
+      ytPlayer.playVideo();
+
+      clearInterval(loopInterval);
+      loopInterval = setInterval(() => {
+        if (ytPlayer.getCurrentTime() >= end) ytPlayer.seekTo(start);
+      }, 300);
+    });
+
+    qs('#stopPreviewBtn').addEventListener('click', () => {
+      if (ytPlayer) ytPlayer.pauseVideo();
+      clearInterval(loopInterval);
+    });
+
+    // === Créer / Exporter ===
+    qs('#exportBtn').addEventListener('click', () => {
+      let trial = getTrial();
+      if (trial <= 0) {
+        qs('#paywall').classList.remove('hidden');
+        return;
+      }
+
+      const start = parseTime(qs('#startInput').value);
+      const end = parseTime(qs('#endInput').value);
+
+      if (!videoId) return alert('Aucune vidéo chargée.');
+      if (end <= start) return alert('La fin doit être supérieure au début.');
+
+      // Simule l'envoi au serveur
+      const job = {
+        videoId,
+        start,
+        end,
+        date: new Date().toLocaleString()
+      };
+
+      // Sauvegarde locale
+      const list = JSON.parse(localStorage.getItem('shorts_jobs') || '[]');
+      list.unshift(job);
+      localStorage.setItem('shorts_jobs', JSON.stringify(list));
+
+      // Met à jour la liste
+      const ul = qs('#jobsList');
+      const li = document.createElement('li');
+      li.textContent = `✅ ${videoId} (${start}s → ${end}s)`;
+      ul.prepend(li);
+
+      // Décrémente l'essai
+      trial--;
+      setTrial(trial);
+
+      if (trial <= 0) {
+        qs('#paywall').classList.remove('hidden');
+      }
+    });
+
+    // === Affiche essais restants au chargement ===
+    setTrial(getTrial());
+  </script>
+</body>
+</html>
