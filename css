@@ -1,0 +1,149 @@
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --radius: 12px;
+  --maxw: 900px;
+}
+
+/* ======= RESET & BASE ======= */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ======= LAYOUT ======= */
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background: var(--card);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  padding: 20px 0;
+} 
+
+header h1 {
+  margin: 0;
+  color: var(--accent);
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ======= PANELS ======= */
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  padding: 18px;
+  margin-top: 16px;
+}
+
+.panel h2 {
+  margin: 0 0 8px 0;
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  margin-top: 4px;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.btn.paypal {
+  background: #ffc43b;
+  color: #111;
+  font-weight: 700;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.player-wrap {
+  margin-top: 14px;
+}
+
+.player-controls {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hidden {
+  display: none;
+}
+
+.paywall {
+  background: #fff6e0;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.small {
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.jobs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jobs-list li {
+  border-bottom: 1px dashed rgba(0,0,0,0.05);
+  padding: 6px 0;
+}
+
+footer {
+  margin-top: 20px;
+  padding: 16px 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.9rem;
+}
